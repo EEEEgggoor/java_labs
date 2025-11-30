@@ -4,15 +4,15 @@ import config.Settings;
 import controller.ZooController;
 import db.DatabaseManager;
 import enclosure.Enclosure;
-import experLogger.OperationLogger;
 import experLogger.CollectionExperiment;
-import model.Animal;
-import view.GraphFromLogs;
-import test.AutoTest;
-
-import javax.swing.*;
+import experLogger.OperationLogger;
 import java.awt.*;
 import java.util.List;
+import javax.swing.*;
+import model.Animal;
+import test.AutoTest;
+import test.MultithreadRandomFill;
+import view.GraphFromLogs;
 
 /**
  * Главное графическое окно приложения Zoo Manager.
@@ -85,6 +85,7 @@ public class MenuGui extends JFrame {
         JButton btnAddEnclosure = new JButton("Создать вольер");
         JButton btnExperiments = new JButton("Эксперименты");
         JButton btnGraph = new JButton("График логов");
+        JButton btnMultithread = new JButton("Многопоток");
         JButton btnExit = new JButton("Выход");
 
         leftPanel.add(btnShow);
@@ -96,7 +97,7 @@ public class MenuGui extends JFrame {
         leftPanel.add(btnAddEnclosure);
         leftPanel.add(btnExperiments);
         leftPanel.add(btnGraph);
-
+        leftPanel.add(btnMultithread);
         if (settings.isRoot()) {
             JButton btnDebug = new JButton("Отладка (root)");
             JButton btnAutoTests = new JButton("Автотесты (root)");
@@ -161,6 +162,20 @@ public class MenuGui extends JFrame {
 
         btnExperiments.addActionListener(e -> runCollectionExperiments());
         btnGraph.addActionListener(e -> GraphFromLogs.showWindowAutoScan());
+
+        btnMultithread.addActionListener(e -> {
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    MultithreadRandomFill demoWindow = new MultithreadRandomFill();
+                    demoWindow.setVisible(true);
+                } catch (Throwable ex) {
+                    JOptionPane.showMessageDialog(this,
+                            "Не удалось открыть окно многопоточного демо:\n" + ex.getMessage(),
+                            "Ошибка", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+        });
+
         btnExit.addActionListener(e -> dispose());
     }
 
