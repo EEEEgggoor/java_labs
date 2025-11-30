@@ -1,0 +1,28 @@
+Start program: 16.11.2025 13:21:06
+LinkedList
+add, ID = 1, 4614
+add, ID = 2, 2649
+add, ID = 3, 2522
+add, ID = 4, 2824
+add, ID = 5, 2093
+add, ID = 6, 2557
+add, ID = 7, 2849
+add, ID = 8, 2809
+add, ID = 9, 2186
+add, ID = 10, 2800
+set, ID = 1, 13424
+
+
+addTotalCount = 10
+addTotalTime = 27903
+addMedianTime = 2724
+addAverageTime = 2790
+
+
+setTotalCount = 1
+setTotalTime = 13424
+setMedianTime = 13424
+setAverageTime = 13424
+
+TotalOperationsTimeNanos = 41327
+Finish program: 16.11.2025 13:21:06

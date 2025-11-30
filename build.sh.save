@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Компиляция
+./compile.sh
+
+if [ $? -eq 0 ]; then
+    # Запуск
+    echo ""
+    export JAVA_TOOL_OPTIONS="-Dsun.java2d.opengl=false -Dsun.java2d.xrender=false"
+    ./run.sh
+sh
+fi

@@ -1,0 +1,28 @@
+Start program: 16.11.2025 13:21:06
+ArrayList
+add, ID = 1, 2108
+add, ID = 2, 571
+add, ID = 3, 560
+add, ID = 4, 542
+add, ID = 5, 739
+add, ID = 6, 435
+add, ID = 7, 427
+add, ID = 8, 382
+add, ID = 9, 319
+add, ID = 10, 299
+set, ID = 2, 5422
+
+
+addTotalCount = 10
+addTotalTime = 6382
+addMedianTime = 488
+addAverageTime = 638
+
+
+setTotalCount = 1
+setTotalTime = 5422
+setMedianTime = 5422
+setAverageTime = 5422
+
+TotalOperationsTimeNanos = 11804
+Finish program: 16.11.2025 13:21:06
