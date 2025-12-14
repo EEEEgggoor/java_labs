@@ -7,6 +7,10 @@ import java.util.List;
  * Пернатое животное (птица).
  */
 public class Feathered extends Animal {
+
+    private static final long serialVersionUID = 1L;
+
+
     public Feathered(String name, double weight, int age) {
         super(name, weight, age);
     }

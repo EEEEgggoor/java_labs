@@ -1,5 +1,6 @@
 package enclosure;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import model.Animal;
@@ -11,7 +12,10 @@ import model.Hoofed;
 /**
  * Класс, представляющий вольер в зоопарке.
  */
-public class Enclosure {
+public class Enclosure implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     /** Тип вольера. */
     private final EnclosureType type;
     /** Читабельное имя вольера. */

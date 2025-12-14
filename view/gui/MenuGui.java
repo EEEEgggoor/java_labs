@@ -7,9 +7,12 @@ import enclosure.Enclosure;
 import experLogger.CollectionExperiment;
 import experLogger.OperationLogger;
 import java.awt.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import javax.swing.*;
 import model.Animal;
+import network.NetworkClient;
 import test.AutoTest;
 import test.MultithreadRandomFill;
 import view.GraphFromLogs;
@@ -31,6 +34,9 @@ public class MenuGui extends JFrame {
     private final JTable enclosuresTable;
 
     private final AutoTest autoTest;
+
+    // Network client — подключается сразу в конструкторе
+    private final NetworkClient netClient;
 
     /**
      * Создаёт главное окно GUI.
@@ -57,6 +63,10 @@ public class MenuGui extends JFrame {
 
         this.animalsTable = new JTable(animalTableModel);
         this.enclosuresTable = new JTable(enclosureTableModel);
+
+        // Инициализация сетевого клиента (подключение при старте)
+        // Хост и порт можно вынести в Settings при желании
+        this.netClient = new NetworkClient("127.0.0.1", 9001);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setPreferredSize(new Dimension(950, 600));
@@ -88,6 +98,17 @@ public class MenuGui extends JFrame {
         JButton btnMultithread = new JButton("Многопоток");
         JButton btnExit = new JButton("Выход");
 
+        // ---- Новые сетевые кнопки ----
+        JButton btnUploadAnimalsFile = new JButton("Загрузить животных (файл)");
+        JButton btnUploadAnimalsMem = new JButton("Загрузить животных (память)");
+        JButton btnDownloadAnimalsFile = new JButton("Выгрузить животных (в файл)");
+        JButton btnDownloadAnimalsMem = new JButton("Выгрузить животных (в память)");
+
+        JButton btnUploadEnclosuresFile = new JButton("Загрузить вольеры (файл)");
+        JButton btnUploadEnclosuresMem = new JButton("Загрузить вольеры (память)");
+        JButton btnDownloadEnclosuresFile = new JButton("Выгрузить вольеры (в файл)");
+        JButton btnDownloadEnclosuresMem = new JButton("Выгрузить вольеры (в память)");
+
         leftPanel.add(btnShow);
         leftPanel.add(btnDistribute);
         leftPanel.add(btnLoad);
@@ -110,6 +131,19 @@ public class MenuGui extends JFrame {
             btnAutoTests.addActionListener(e -> runAutoTests());
             btnExtTests.addActionListener(e -> runExtendedTests());
         }
+
+        // Добавляем новые сетевые кнопки в панель (после стандартных кнопок)
+        leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
+        leftPanel.add(btnUploadAnimalsFile);
+        leftPanel.add(btnUploadAnimalsMem);
+        leftPanel.add(btnDownloadAnimalsFile);
+        leftPanel.add(btnDownloadAnimalsMem);
+
+        leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
+        leftPanel.add(btnUploadEnclosuresFile);
+        leftPanel.add(btnUploadEnclosuresMem);
+        leftPanel.add(btnDownloadEnclosuresFile);
+        leftPanel.add(btnDownloadEnclosuresMem);
 
         leftPanel.add(btnExit);
 
@@ -177,6 +211,165 @@ public class MenuGui extends JFrame {
         });
 
         btnExit.addActionListener(e -> dispose());
+
+        // ===== Обработчики сетевых кнопок =====
+
+        // 1) Upload animals from DB files (сначала сохраняем в БД, чтобы файл был актуален)
+        btnUploadAnimalsFile.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    // убедимся, что локальные .db актуальны
+                    saveToDatabase();
+                    Path animalsDb = Path.of("animals.db");
+                    Path enclosuresDb = Path.of("enclosures.db");
+                    if (!Files.exists(animalsDb) || !Files.exists(enclosuresDb)) {
+                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                                "Файлы БД не найдены. Сначала сохраните в БД.", "Ошибка", JOptionPane.ERROR_MESSAGE));
+                        return;
+                    }
+                    netClient.uploadFile(animalsDb, "ANIMALS");
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Файл animals.db успешно загружен на сервер."));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Ошибка загрузки файла: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
+                }
+            }).start();
+        });
+
+        // 2) Upload animals from memory (список объектов)
+        btnUploadAnimalsMem.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    // отправляем текущий список animals (List<Animal>)
+                    netClient.uploadObject(animals, "ANIMALS");
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Список животных отправлен на сервер (из памяти)."));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Ошибка загрузки из памяти: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
+                }
+            }).start();
+        });
+
+        // 3) Download animals -> file (перезаписывает локальный animals.db)
+        btnDownloadAnimalsFile.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    Path animalsDb = Path.of("animals.db");
+                    netClient.downloadFile(animalsDb, "ANIMALS");
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Файл animals.db загружен с сервера."));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Ошибка выгрузки в файл: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
+                }
+            }).start();
+        });
+
+        // 4) Download animals -> memory (заменяем коллекцию в приложении)
+        btnDownloadAnimalsMem.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    Object obj = netClient.downloadObject("ANIMALS");
+                    if (obj instanceof List) {
+                        //noinspection unchecked
+                        this.animals = (List<Animal>) obj;
+                        animalTableModel.setAnimals(this.animals);
+                        SwingUtilities.invokeLater(() -> {
+                            refreshTables();
+                            JOptionPane.showMessageDialog(this, "Список животных загружен в память из сервера.");
+                        });
+                    } else {
+                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                                "Полученные данные имеют неверный формат.", "Ошибка", JOptionPane.ERROR_MESSAGE));
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Ошибка выгрузки в память: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
+                }
+            }).start();
+        });
+
+        // ===== Аналогично для вольеров =====
+
+        btnUploadEnclosuresFile.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    saveToDatabase();
+                    Path enclosuresDb = Path.of("enclosures.db");
+                    if (!Files.exists(enclosuresDb)) {
+                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                                "Файл enclosures.db не найден. Сначала сохраните в БД.", "Ошибка", JOptionPane.ERROR_MESSAGE));
+                        return;
+                    }
+                    netClient.uploadFile(enclosuresDb, "ENCLOSURES");
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Файл enclosures.db успешно загружен на сервер."));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Ошибка загрузки файла: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
+                }
+            }).start();
+        });
+
+        btnUploadEnclosuresMem.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    netClient.uploadObject(enclosures, "ENCLOSURES");
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Список вольеров отправлен на сервер (из памяти)."));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Ошибка загрузки из памяти: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
+                }
+            }).start();
+        });
+
+        btnDownloadEnclosuresFile.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    Path enclosuresDb = Path.of("enclosures.db");
+                    netClient.downloadFile(enclosuresDb, "ENCLOSURES");
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Файл enclosures.db загружен с сервера."));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Ошибка выгрузки в файл: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
+                }
+            }).start();
+        });
+
+        btnDownloadEnclosuresMem.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    Object obj = netClient.downloadObject("ENCLOSURES");
+                    if (obj instanceof List) {
+                        //noinspection unchecked
+                        this.enclosures = (List<Enclosure>) obj;
+                        enclosureTableModel.setEnclosures(this.enclosures);
+                        SwingUtilities.invokeLater(() -> {
+                            refreshTables();
+                            JOptionPane.showMessageDialog(this, "Список вольеров загружен в память из сервера.");
+                        });
+                    } else {
+                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                                "Полученные данные имеют неверный формат.", "Ошибка", JOptionPane.ERROR_MESSAGE));
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Ошибка выгрузки в память: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
+                }
+            }).start();
+        });
     }
 
     /**

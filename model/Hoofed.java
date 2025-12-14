@@ -7,6 +7,10 @@ import java.util.List;
  * Копытное животное (например, олень, козёл).
  */
 public class Hoofed extends Animal {
+
+    private static final long serialVersionUID = 1L;
+
+
     public Hoofed(String name, double weight, int age) {
         super(name, weight, age);
     }

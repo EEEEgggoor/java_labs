@@ -7,9 +7,15 @@ import java.util.List;
  * Хладнокровное животное (рептилии, амфибии).
  */
 public class ColdBlooded extends Animal {
+
+
+    private static final long serialVersionUID = 1L;
+
+
     public ColdBlooded(String name, double weight, int age) {
         super(name, weight, age);
     }
+
 
     /**
      * Ищет вольер с инфракрасным/специализированным освещением.

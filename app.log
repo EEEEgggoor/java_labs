@@ -150,3 +150,22 @@ setAverageTime = 0
 
 TotalOperationsTimeNanos = 0
 Finish program: 30.11.2025 14:58:31
+Start program: 14.12.2025 16:04:08
+ZooApplication
+14.12.2025 16:04:08 INFO: Program started by user: admin
+14.12.2025 16:04:08 INFO: Program finished
+
+
+addTotalCount = 0
+addTotalTime = 0
+addMedianTime = 0
+addAverageTime = 0
+
+
+setTotalCount = 0
+setTotalTime = 0
+setMedianTime = 0
+setAverageTime = 0
+
+TotalOperationsTimeNanos = 0
+Finish program: 14.12.2025 16:04:08

@@ -1,12 +1,16 @@
 package model;
 
 import enclosure.Enclosure;
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Абстрактный класс, представляющий животное в модели зоопарка.
  */
-public abstract class Animal {
+public abstract class Animal implements Serializable{
+
+    private static final long serialVersionUID = 1L;
+
     /** Вес животного в килограммах. */
     protected double weight;
     /** Возраст животного в годах. */

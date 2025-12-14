@@ -14,6 +14,9 @@ public class Aquatic extends Animal {
      * @param weight вес
      * @param age возраст
      */
+
+    private static final long serialVersionUID = 1L;
+
     public Aquatic(String name, double weight, int age) {
         super(name, weight, age);
     }
