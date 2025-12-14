@@ -100,14 +100,10 @@ public class MenuGui extends JFrame {
 
         // ---- Новые сетевые кнопки ----
         JButton btnUploadAnimalsFile = new JButton("Загрузить животных (файл)");
-        JButton btnUploadAnimalsMem = new JButton("Загрузить животных (память)");
         JButton btnDownloadAnimalsFile = new JButton("Выгрузить животных (в файл)");
-        JButton btnDownloadAnimalsMem = new JButton("Выгрузить животных (в память)");
 
         JButton btnUploadEnclosuresFile = new JButton("Загрузить вольеры (файл)");
-        JButton btnUploadEnclosuresMem = new JButton("Загрузить вольеры (память)");
         JButton btnDownloadEnclosuresFile = new JButton("Выгрузить вольеры (в файл)");
-        JButton btnDownloadEnclosuresMem = new JButton("Выгрузить вольеры (в память)");
 
         leftPanel.add(btnShow);
         leftPanel.add(btnDistribute);
@@ -135,15 +131,11 @@ public class MenuGui extends JFrame {
         // Добавляем новые сетевые кнопки в панель (после стандартных кнопок)
         leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
         leftPanel.add(btnUploadAnimalsFile);
-        leftPanel.add(btnUploadAnimalsMem);
         leftPanel.add(btnDownloadAnimalsFile);
-        leftPanel.add(btnDownloadAnimalsMem);
 
         leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
         leftPanel.add(btnUploadEnclosuresFile);
-        leftPanel.add(btnUploadEnclosuresMem);
         leftPanel.add(btnDownloadEnclosuresFile);
-        leftPanel.add(btnDownloadEnclosuresMem);
 
         leftPanel.add(btnExit);
 
@@ -214,7 +206,6 @@ public class MenuGui extends JFrame {
 
         // ===== Обработчики сетевых кнопок =====
 
-        // 1) Upload animals from DB files (сначала сохраняем в БД, чтобы файл был актуален)
         btnUploadAnimalsFile.addActionListener(e -> {
             new Thread(() -> {
                 try {
@@ -230,6 +221,10 @@ public class MenuGui extends JFrame {
                     netClient.uploadFile(animalsDb, "ANIMALS");
                     SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
                             "Файл animals.db успешно загружен на сервер."));
+                    loadFromDatabase();
+                    refreshTables();
+
+                    
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
@@ -238,21 +233,7 @@ public class MenuGui extends JFrame {
             }).start();
         });
 
-        // 2) Upload animals from memory (список объектов)
-        btnUploadAnimalsMem.addActionListener(e -> {
-            new Thread(() -> {
-                try {
-                    // отправляем текущий список animals (List<Animal>)
-                    netClient.uploadObject(animals, "ANIMALS");
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                            "Список животных отправлен на сервер (из памяти)."));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                            "Ошибка загрузки из памяти: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
-                }
-            }).start();
-        });
+
 
         // 3) Download animals -> file (перезаписывает локальный animals.db)
         btnDownloadAnimalsFile.addActionListener(e -> {
@@ -262,6 +243,10 @@ public class MenuGui extends JFrame {
                     netClient.downloadFile(animalsDb, "ANIMALS");
                     SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
                             "Файл animals.db загружен с сервера."));
+                    loadFromDatabase();
+                    refreshTables();
+
+                    
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
@@ -270,30 +255,8 @@ public class MenuGui extends JFrame {
             }).start();
         });
 
-        // 4) Download animals -> memory (заменяем коллекцию в приложении)
-        btnDownloadAnimalsMem.addActionListener(e -> {
-            new Thread(() -> {
-                try {
-                    Object obj = netClient.downloadObject("ANIMALS");
-                    if (obj instanceof List) {
-                        //noinspection unchecked
-                        this.animals = (List<Animal>) obj;
-                        animalTableModel.setAnimals(this.animals);
-                        SwingUtilities.invokeLater(() -> {
-                            refreshTables();
-                            JOptionPane.showMessageDialog(this, "Список животных загружен в память из сервера.");
-                        });
-                    } else {
-                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                                "Полученные данные имеют неверный формат.", "Ошибка", JOptionPane.ERROR_MESSAGE));
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                            "Ошибка выгрузки в память: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
-                }
-            }).start();
-        });
+
+
 
         // ===== Аналогично для вольеров =====
 
@@ -310,6 +273,9 @@ public class MenuGui extends JFrame {
                     netClient.uploadFile(enclosuresDb, "ENCLOSURES");
                     SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
                             "Файл enclosures.db успешно загружен на сервер."));
+                    loadFromDatabase();
+                    refreshTables();
+                        
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
@@ -318,19 +284,7 @@ public class MenuGui extends JFrame {
             }).start();
         });
 
-        btnUploadEnclosuresMem.addActionListener(e -> {
-            new Thread(() -> {
-                try {
-                    netClient.uploadObject(enclosures, "ENCLOSURES");
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                            "Список вольеров отправлен на сервер (из памяти)."));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                            "Ошибка загрузки из памяти: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
-                }
-            }).start();
-        });
+
 
         btnDownloadEnclosuresFile.addActionListener(e -> {
             new Thread(() -> {
@@ -339,6 +293,9 @@ public class MenuGui extends JFrame {
                     netClient.downloadFile(enclosuresDb, "ENCLOSURES");
                     SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
                             "Файл enclosures.db загружен с сервера."));
+                loadFromDatabase();
+                refreshTables();
+
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
@@ -347,29 +304,6 @@ public class MenuGui extends JFrame {
             }).start();
         });
 
-        btnDownloadEnclosuresMem.addActionListener(e -> {
-            new Thread(() -> {
-                try {
-                    Object obj = netClient.downloadObject("ENCLOSURES");
-                    if (obj instanceof List) {
-                        //noinspection unchecked
-                        this.enclosures = (List<Enclosure>) obj;
-                        enclosureTableModel.setEnclosures(this.enclosures);
-                        SwingUtilities.invokeLater(() -> {
-                            refreshTables();
-                            JOptionPane.showMessageDialog(this, "Список вольеров загружен в память из сервера.");
-                        });
-                    } else {
-                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                                "Полученные данные имеют неверный формат.", "Ошибка", JOptionPane.ERROR_MESSAGE));
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                            "Ошибка выгрузки в память: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE));
-                }
-            }).start();
-        });
     }
 
     /**
